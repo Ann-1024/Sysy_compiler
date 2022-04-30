@@ -52,7 +52,7 @@ public class Lexer {
         }
         chunk = chunk.substring(i);
     }
-    public void next(int i){
+    private void next(int i){
         chunk = chunk.substring(i);
     }
     public Token nextToken() throws Exception {

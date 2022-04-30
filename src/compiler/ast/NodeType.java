@@ -8,8 +8,15 @@ public enum NodeType {
     VarDecl,
     ConstDef,
     VarDef,
-    TypeInt,
-    TypeFloat,
-    TypeVoid,
+    IntConstDef,
+    IntArrayConstDef,
+    FloatConstDef,
+    FloatArrayConstDef,
+    IntDef,
+    IntArrayDef,
+    FloatDef,
+    FloatArrayDef,
+    InitVar,
+    Exp
 
 }
