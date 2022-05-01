@@ -12,6 +12,7 @@ public enum NodeType {
     FloatArrayDef,
     FloatConstDef,
     FloatArrayConstDef,
+    InitVar,
     FuncFParam,
     FuncRParam,
     Block,
