@@ -305,41 +305,82 @@ public class Parser {
                 return parse_Exp();
         }
     }
-
+    // 很多Stmt的结束位置没写
     private IfStmt parse_IfStmt() throws Exception {
         IfStmt ifStmt =  new IfStmt();
         ifStmt.start = lexer.nextToken().line;
-        ifStmt.
+        ifStmt.cond = parse_Cond();
+        ifStmt.stmt1 = parse_Stmt();
+        if(lexer.LookAhead()==TokenKind.ElseKeyword){
+           lexer.nextToken();
+           ifStmt.stmt2 = parse_Stmt();
+        }
+        return ifStmt;
+    }
+
+    private WhileStmt parse_WhileStmt() throws Exception {
+        WhileStmt whileStmt = new WhileStmt();
+        whileStmt.start = lexer.nextToken().line;
+        whileStmt.cond = parse_Cond();
+        whileStmt.stmt = parse_Stmt();
         return null;
     }
 
-    private Stmt parse_WhileStmt() {
-        return null;
+    private BreakStmt parse_BreakStmt() throws Exception {
+        BreakStmt breakStmt = new BreakStmt();
+        breakStmt.start = lexer.nextToken().line;
+        Token t = lexer.nextToken();
+        if(t.kind!=TokenKind.Semicolon){
+            throw new Exception("except Semicolon!");
+        }
+        breakStmt.end = t.line;
+        return breakStmt;
     }
 
-    private Stmt parse_BreakStmt() {
-        return null;
+    private ContinueStmt parse_ContinueStmt() throws Exception {
+        ContinueStmt continueStmt = new ContinueStmt();
+        continueStmt.start = lexer.nextToken().line;
+        Token t = lexer.nextToken();
+        if(t.kind!=TokenKind.Semicolon){
+            throw new Exception("except Semicolon!");
+        }
+        continueStmt.end = t.line;
+        return continueStmt;
     }
 
-    private Stmt parse_ContinueStmt() {
-        return null;
-    }
-    private Stmt parse_ReturnStmt() {
-        return null;
-    }
-
-    private Lval parse_Lval() {
-        return null;
+    private ReturnStmt parse_ReturnStmt() throws Exception {
+        ReturnStmt returnStmt = new ReturnStmt();
+        returnStmt.start = lexer.nextToken().line;
+        returnStmt.exp = parse_Exp();
+        return returnStmt;
     }
 
-    private Stmt parse_AssignStmt(Lval l) {
-        return null;
+    private Lval parse_Lval() throws Exception {
+        Lval l = new Lval(lexer.nextToken());
+        while(lexer.LookAhead()==TokenKind.LBracket){
+            lexer.TokenOfKind(TokenKind.LBracket);
+            l.exps.add(parse_Exp());
+            lexer.TokenOfKind(TokenKind.RBracket);
+        }
+        return l;
+    }
+
+    private AssignStmt parse_AssignStmt(Lval l) throws Exception {
+        AssignStmt assignStmt = new AssignStmt(l);
+        lexer.TokenOfKind(TokenKind.OpAsg);
+        assignStmt.exp = parse_Exp();
+        return assignStmt;
     }
 
     private Exp parse_Exp() {
+
         return null;
     }
     private Exp parse_Exp(Lval l) {
         return null;
+    }
+
+    private Cond parse_Cond() {
+
     }
 }

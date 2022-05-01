@@ -15,7 +15,13 @@ public enum NodeType {
     FloatArrayConstDef,
     FuncFParam,
     Block,
-    BlockItem,
-    Stmt
+    IfStmt,
+    WhileStmt,
+    BreakStmt,
+    ContinueStmt,
+    ReturnStmt,
+    Lval,
+    AssignStmt,
+
 
 }
