@@ -3,20 +3,19 @@ package compiler.ast;
 public enum NodeType {
     CompUnit,
     Decl,
-    FuncDef,
     ConstDecl,
     VarDecl,
-    ConstDef,
-    VarDef,
-    IntConstDef,
-    IntArrayConstDef,
-    FloatConstDef,
-    FloatArrayConstDef,
     IntDef,
     IntArrayDef,
+    IntConstDef,
+    IntArrayConstDef,
     FloatDef,
     FloatArrayDef,
-    InitVar,
-    Exp
+    FloatConstDef,
+    FloatArrayConstDef,
+    FuncFParam,
+    Block,
+    BlockItem,
+    Stmt
 
 }

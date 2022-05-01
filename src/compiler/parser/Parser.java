@@ -1,14 +1,13 @@
 package compiler.parser;
 
 import compiler.ast.*;
-import compiler.ast.Interface.ConstDef;
-import compiler.ast.Interface.Exp;
+import compiler.ast.Interface.*;
 import compiler.ast.InitVar;
-import compiler.ast.Interface.Init;
-import compiler.ast.Interface.VarDef;
 import compiler.lexer.Lexer;
 import compiler.lexer.Token;
 import compiler.lexer.TokenKind;
+
+import java.util.ArrayList;
 
 public class Parser {
     Lexer lexer;
@@ -39,7 +38,7 @@ public class Parser {
         }
     }
 
-    private Node parse_Decl() throws Exception {
+    private Decl parse_Decl() throws Exception {
         Token t = lexer.nextToken();
         if(t.kind==TokenKind.ConstKeyword){
            lexer.nextToken();
@@ -50,7 +49,7 @@ public class Parser {
         }
     }
 
-    private Node parse_ConstDecl(int start) throws Exception {
+    private ConstDecl parse_ConstDecl(int start) throws Exception {
         ConstDecl constDecl = new ConstDecl(start);
         Token t = lexer.nextToken();
         if(t.kind==TokenKind.IntType){
@@ -132,7 +131,6 @@ public class Parser {
             Token t = lexer.nextToken();
             arrayDef.end = t.line;
         }
-        return;
     }
 
     private InitVar parse_InitVar() throws Exception {
@@ -166,7 +164,7 @@ public class Parser {
 
     }
 
-    private Node parse_VarDecl(Token t, Token t2) throws Exception {
+    private VarDecl parse_VarDecl(Token t, Token t2) throws Exception {
         VarDecl varDecl = new VarDecl(t.line);
         if(t2.kind==TokenKind.IntType){
             while(lexer.LookAhead()!=TokenKind.Semicolon){
@@ -232,13 +230,116 @@ public class Parser {
         return valDef;
     }
 
+    private Node parse_Func(Token t, Token t1) throws Exception {
+        FuncDef funcDef = new FuncDef(t,t1);
+        lexer.TokenOfKind(TokenKind.LParen);
+        while(lexer.LookAhead()!=TokenKind.RParen){
+            funcDef.funcFParams.add(parse_FuncFParam());
+        }
+        funcDef.block = parse_Block();
+        return funcDef;
+    }
 
+    private FuncFParam parse_FuncFParam() throws Exception {
+        Token t = lexer.nextToken();
+        Token t1 = lexer.nextToken();
+        FuncFParam funcFParam = new FuncFParam();
+        funcFParam.start = t.line;
+        funcFParam.identifier = t1.name;
+        if(lexer.LookAhead()==TokenKind.LBracket){
+            funcFParam.exps = new ArrayList<>();
+            while(lexer.LookAhead()!=TokenKind.Comma&&lexer.LookAhead()!=TokenKind.LCurly){
+                lexer.TokenOfKind(TokenKind.LBracket);
+                funcFParam.exps.add(parse_Exp());
+                lexer.TokenOfKind(TokenKind.RBracket);
+            }
+        }
+        t = lexer.nextToken();
+        funcFParam.end = t.line;
+        if(t.kind==TokenKind.Comma||t.kind==TokenKind.RCurly){
+            return funcFParam;
+        }
+        throw new Exception("FuncFParam parse error!");
+    }
 
-    private Node parse_Func(Token t, Token t1) {
+    private Block parse_Block() throws Exception {
+        Block block = new Block();
+        Token t = lexer.nextToken();
+        if(t.kind!=TokenKind.LCurly){
+            throw new Exception("except Lcurly at the beginning of the block!");
+        }
+        block.start = t.line;
+        while(lexer.LookAhead()!=TokenKind.RCurly){
+            block.blockItems.add(parse_BlockItem());
+        }
+        block.end = lexer.nextToken().line;
+        return block;
+    }
+
+    private BlockItem parse_BlockItem() throws Exception {
+        if(lexer.LookAhead()==TokenKind.ConstKeyword||lexer.LookAhead()==TokenKind.IntType||lexer.LookAhead()==TokenKind.FloatType){
+            return parse_Decl();
+        }
+        return parse_Stmt();
+    }
+
+    private Stmt parse_Stmt() throws Exception {
+        switch (lexer.LookAhead()){
+            case IfKeyword:
+                return parse_IfStmt();
+            case WhileKeyword:
+                return parse_WhileStmt();
+            case BreakKeyword:
+                return parse_BreakStmt();
+            case ContinueKeyword:
+                return parse_ContinueStmt();
+            case ReturnKeyword:
+                return parse_ReturnStmt();
+            case Ident:
+                Lval lval = parse_Lval();
+                if(lexer.LookAhead()==TokenKind.OpAsg){
+                    return parse_AssignStmt(lval);
+                }
+                return parse_Exp(lval);
+            default:
+                return parse_Exp();
+        }
+    }
+
+    private IfStmt parse_IfStmt() throws Exception {
+        IfStmt ifStmt =  new IfStmt();
+        ifStmt.start = lexer.nextToken().line;
+        ifStmt.
+        return null;
+    }
+
+    private Stmt parse_WhileStmt() {
+        return null;
+    }
+
+    private Stmt parse_BreakStmt() {
+        return null;
+    }
+
+    private Stmt parse_ContinueStmt() {
+        return null;
+    }
+    private Stmt parse_ReturnStmt() {
+        return null;
+    }
+
+    private Lval parse_Lval() {
+        return null;
+    }
+
+    private Stmt parse_AssignStmt(Lval l) {
         return null;
     }
 
     private Exp parse_Exp() {
+        return null;
+    }
+    private Exp parse_Exp(Lval l) {
         return null;
     }
 }
