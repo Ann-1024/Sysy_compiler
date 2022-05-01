@@ -2,7 +2,6 @@ package compiler.ast;
 
 public enum NodeType {
     CompUnit,
-    Decl,
     ConstDecl,
     VarDecl,
     IntDef,
@@ -14,6 +13,7 @@ public enum NodeType {
     FloatConstDef,
     FloatArrayConstDef,
     FuncFParam,
+    FuncRParam,
     Block,
     IfStmt,
     WhileStmt,
@@ -22,6 +22,20 @@ public enum NodeType {
     ReturnStmt,
     Lval,
     AssignStmt,
-
-
+    AddExp,
+    AddExp1,
+    MulExp,
+    MulExp1,
+    ParenExp,
+    LvarExp,
+    FuncExp,
+    UnaryExp1,
+    IntExp,
+    FloatExp,
+    LOrExp,
+    LAndExp,
+    EqExp,
+    RelExp,
+    RelExp_Eq,
+    RelExp_Add
 }

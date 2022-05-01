@@ -3,7 +3,7 @@ package compiler.ast;
 import compiler.ast.Interface.Stmt;
 
 public class IfStmt extends Node implements Stmt {
-    public Cond cond;
+    public LOrExp lOrExp;
     public Stmt stmt1;
     public Stmt stmt2;
 

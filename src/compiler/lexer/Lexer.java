@@ -284,12 +284,12 @@ public class Lexer {
             chunk = chunk.substring(m.end());
         }
     }
-    public void TokenOfKind(TokenKind tokenKind) throws Exception {
+    public int TokenOfKind(TokenKind tokenKind) throws Exception {
         Token t = nextToken();
         if(t.kind!=tokenKind){
             throw new Exception("expect token"+tokenKind);
         }
-
+        return t.line;
     }
     public TokenKind LookAhead() throws Exception {
         if(nextLine > 0){

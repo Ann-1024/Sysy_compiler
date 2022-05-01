@@ -1,5 +1,6 @@
 package compiler.parser;
 
+import compiler.ast.FloatExp;
 import compiler.ast.*;
 import compiler.ast.Interface.*;
 import compiler.ast.InitVar;
@@ -248,6 +249,8 @@ public class Parser {
         funcFParam.identifier = t1.name;
         if(lexer.LookAhead()==TokenKind.LBracket){
             funcFParam.exps = new ArrayList<>();
+            lexer.TokenOfKind(TokenKind.LBracket);
+            lexer.TokenOfKind(TokenKind.RBracket);
             while(lexer.LookAhead()!=TokenKind.Comma&&lexer.LookAhead()!=TokenKind.LCurly){
                 lexer.TokenOfKind(TokenKind.LBracket);
                 funcFParam.exps.add(parse_Exp());
@@ -300,16 +303,20 @@ public class Parser {
                 if(lexer.LookAhead()==TokenKind.OpAsg){
                     return parse_AssignStmt(lval);
                 }
-                return parse_Exp(lval);
+                UnaryExp unaryExp = parse_Exp(lval);
+                lexer.TokenOfKind(TokenKind.Semicolon);
+                return unaryExp;
             default:
-                return parse_Exp();
+                Exp exp = parse_Exp();
+                lexer.TokenOfKind(TokenKind.Semicolon);
+                return exp;
         }
     }
     // 很多Stmt的结束位置没写
     private IfStmt parse_IfStmt() throws Exception {
         IfStmt ifStmt =  new IfStmt();
         ifStmt.start = lexer.nextToken().line;
-        ifStmt.cond = parse_Cond();
+        ifStmt.lOrExp = parse_LOrExp();
         ifStmt.stmt1 = parse_Stmt();
         if(lexer.LookAhead()==TokenKind.ElseKeyword){
            lexer.nextToken();
@@ -321,7 +328,7 @@ public class Parser {
     private WhileStmt parse_WhileStmt() throws Exception {
         WhileStmt whileStmt = new WhileStmt();
         whileStmt.start = lexer.nextToken().line;
-        whileStmt.cond = parse_Cond();
+        whileStmt.lOrExp = parse_LOrExp();
         whileStmt.stmt = parse_Stmt();
         return null;
     }
@@ -352,6 +359,7 @@ public class Parser {
         ReturnStmt returnStmt = new ReturnStmt();
         returnStmt.start = lexer.nextToken().line;
         returnStmt.exp = parse_Exp();
+        returnStmt.end = lexer.TokenOfKind(TokenKind.Semicolon);
         return returnStmt;
     }
 
@@ -372,15 +380,166 @@ public class Parser {
         return assignStmt;
     }
 
-    private Exp parse_Exp() {
+    private AddExp parse_Exp() throws Exception {
+        AddExp addExp = new AddExp();
+        addExp.mulExp = parse_MulExp();
+        while(lexer.LookAhead()==TokenKind.OpAdd||lexer.LookAhead()==TokenKind.OpSub){
+            addExp.addExp1s.add(parse_AddExp1());
+        }
+        return addExp;
+    }
 
-        return null;
-    }
-    private Exp parse_Exp(Lval l) {
-        return null;
+    private MulExp parse_MulExp() throws Exception {
+        MulExp mulExp = new MulExp();
+        mulExp.unaryExp = parse_UnaryExp();
+        while(lexer.LookAhead()==TokenKind.OpMul||lexer.LookAhead()==TokenKind.OpDiv||lexer.LookAhead()==TokenKind.OpMod){
+            mulExp.mulExp1s.add(parse_MulExp1());
+        }
+        return mulExp;
     }
 
-    private Cond parse_Cond() {
-        return null;
+
+    private AddExp1 parse_AddExp1() throws Exception {
+        Token t = lexer.nextToken();
+        AddExp1 addExp1 = new AddExp1();
+        addExp1.kind = t.kind;
+        addExp1.start = t.line;
+        addExp1.mulExp = parse_MulExp();
+        return addExp1;
     }
+    private MulExp1 parse_MulExp1() throws Exception {
+        Token t = lexer.nextToken();
+        MulExp1 mulExp1 = new MulExp1();
+        mulExp1.kind = t.kind;
+        mulExp1.start = t.line;
+        mulExp1.unaryExp = parse_UnaryExp();
+        return mulExp1;
+    }
+
+    private UnaryExp parse_UnaryExp() throws Exception {
+        switch (lexer.LookAhead()){
+            case LParen:
+                ParenExp parenExp = new ParenExp();
+                parenExp.start = lexer.nextToken().line;
+                parenExp.exp = parenExp;
+                parenExp.end = lexer.TokenOfKind(TokenKind.RParen);
+                return parenExp;
+            case Ident:
+                Lval lval = parse_Lval();
+                return parse_Exp(lval);
+            case OpAdd:
+                return parse_UnaryExp1();
+            case OpSub:
+                return parse_UnaryExp1();
+            case OpNE:
+                return parse_UnaryExp1();
+            default:
+                return parse_NumberExp();
+        }
+    }
+
+    private UnaryExp parse_UnaryExp1() throws Exception {
+        Token t = lexer.nextToken();
+        UnaryExp1 unaryExp1 = new UnaryExp1();
+        unaryExp1.start = t.line;
+        unaryExp1.kind = t.kind;
+        unaryExp1.unaryExp = parse_UnaryExp();
+        return unaryExp1;
+    }
+
+    private UnaryExp parse_NumberExp() throws Exception {
+        Token t = lexer.nextToken();
+        IntExp intExp;
+        switch (t.kind){
+            case DecIntConst:
+                intExp = new IntExp();
+                intExp.start = t.line;
+                intExp.num = Integer.parseUnsignedInt(t.name,10);
+                return intExp;
+            case HexIntConst:
+                intExp = new IntExp();
+                intExp.start = t.line;
+                intExp.num = Integer.parseInt(t.name.substring(2),16);
+                return intExp;
+            case OctalIntConst:
+                intExp = new IntExp();
+                intExp.start = t.line;
+                if(t.name.length()==1){
+                    intExp.num = 0;
+                }
+                else{
+                    intExp.num = Integer.parseInt(t.name.substring(1),8);
+                }
+                return intExp;
+            case FloatType:
+                FloatExp floatExp = new FloatExp();
+                floatExp.start = t.line;
+                floatExp.num = Float.parseFloat(t.name);
+            default:
+                throw new Exception("expect a number here!");
+        }
+    }
+
+
+    private UnaryExp parse_Exp(Lval l) throws Exception {
+        if(lexer.LookAhead()==TokenKind.Semicolon){
+            return new LValExp(l);
+        }
+        if(lexer.LookAhead()==TokenKind.LCurly){
+            FuncExp funcExp = new FuncExp();
+            funcExp.start = l.start;
+            funcExp.identifier = l.identifier;
+            lexer.nextToken();
+            while(lexer.LookAhead()!=TokenKind.RCurly){
+                funcExp.funcRParams.add(new FuncRParam(parse_Exp()));
+                lexer.TokenOfKind(TokenKind.Comma);
+            }
+            funcExp.end = lexer.nextToken().line;
+            return funcExp;
+        }
+        throw new Exception("invalid token after Lval");
+    }
+
+    private LOrExp parse_LOrExp() throws Exception {
+        LOrExp lOrExp = new LOrExp();
+        lOrExp.lAndExps.add(parse_LAndExps());
+        while(lexer.LookAhead()==TokenKind.OpOr){
+            lexer.nextToken();
+            lOrExp.lAndExps.add(parse_LAndExps());
+        }
+        return lOrExp;
+    }
+
+    private LAndExp parse_LAndExps() throws Exception {
+        LAndExp lAndExp = new LAndExp();
+        lAndExp.eqExps.add(parse_EqExp());
+        while(lexer.LookAhead()==TokenKind.OpAnd){
+            lexer.nextToken();
+            lAndExp.eqExps.add(parse_EqExp());
+        }
+        return lAndExp;        
+    }
+
+    private EqExp parse_EqExp() throws Exception {
+        EqExp eqExp = new EqExp();
+        eqExp.relExp = parse_relExp();
+        Token t;
+        while(lexer.LookAhead()==TokenKind.OpEQ||lexer.LookAhead()==TokenKind.OpNE){
+            t = lexer.nextToken();
+            eqExp.relExp_eqs.add(new RelExp_Eq(t.kind,parse_relExp()));
+        }
+        return eqExp;
+    }
+
+    private RelExp parse_relExp() throws Exception {
+        RelExp relExp = new RelExp();
+        relExp.addExp = parse_Exp();
+        Token t;
+        while(lexer.LookAhead()==TokenKind.OpLE||lexer.LookAhead()==TokenKind.OpLT||lexer.LookAhead()==TokenKind.OpGE||lexer.LookAhead()==TokenKind.OpGT){
+            t = lexer.nextToken();
+            relExp.relExp_adds.add(new RelExp_Add(t.kind,parse_Exp()));
+        }
+        return relExp;
+    }
+
 }
